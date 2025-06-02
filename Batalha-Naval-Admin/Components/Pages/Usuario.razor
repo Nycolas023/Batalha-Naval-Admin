@@ -16,26 +16,25 @@ else
         <thead>
             <tr>
                 <td>ID</td>
-                <td>   </td>
+                <td>Nome</td>
+                <td>Alterar</td>
+                <td>Deletar</td>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                @foreach (var usuario in usuarioObj)
-                {
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="me-3">ID: @usuario.Id</span>
-                        <button class="btn btn-primary" @onclick="() => Funcao(usuario.Id)">Click</button>
-                    </div>
-                 }
-            </tr>
+            @foreach (var usuario in usuarioObj)
+            {
+               <tr>
+                   <td><span class="me-3">@usuario.Id</span></td>
+                   <td><span class="me-3">TESTE</span></td>
+                   <td><button class="btn btn-warning" @onclick="() => Funcao(usuario.Id)">Click</button></td>
+                   <td><button class="btn btn-danger" @onclick="() => Funcao(usuario.Id)">Click</button></td>
+               </tr>
+            }
 
         </tbody>
     </table>    
 }
-
-
-
 
 @code {
 
