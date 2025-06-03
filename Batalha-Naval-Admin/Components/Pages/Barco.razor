@@ -1,0 +1,68 @@
+﻿@page "/barco"
+@using Batalha_Naval_Admin.Models
+@rendermode InteractiveServer
+
+<PageTitle>Barcos</PageTitle>
+
+<h1>Barcos</h1>
+
+@if (shipObj == null)
+{
+    <p>Carregando ...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <td>ID</td>
+                <td>Nome</td>
+                <td>Imagem</td>
+                <td>Descrição</td>
+                <td>Tamanho</td>
+                <td>Tema</td>
+                <td>Alterar</td>
+                <td>Deletar</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var barco in shipObj)
+            {
+               <tr>
+                   <td><span class="me-3">@barco.ShipId</span></td>
+                   <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                   <td><button class="btn btn-warning" @onclick="() => Funcao(barco.ShipId)">Click</button></td>
+                   <td><button class="btn btn-danger" @onclick="() => Funcao(barco.ShipId)">Click</button></td>
+               </tr>
+            }
+
+        </tbody>
+    </table>    
+}
+
+@code {
+
+    private ShipModel[]? shipObj;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1000);
+
+        shipObj = Enumerable.Range(1, 20).Select(index => new ShipModel
+            {
+               ShipId = Random.Shared.Next(0,20)
+            }).ToArray();
+    }
+
+    String teste = "";
+
+    public void Funcao(int pid)
+    {
+        Console.WriteLine("teste");
+    }
+
+}

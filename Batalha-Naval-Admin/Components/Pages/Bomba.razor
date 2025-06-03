@@ -1,0 +1,68 @@
+﻿@page "/bomba"
+@using Batalha_Naval_Admin.Models
+@rendermode InteractiveServer
+
+<PageTitle>Bombas</PageTitle>
+
+<h1>Bombas</h1>
+
+@if (bombObj == null)
+{
+    <p>Carregando ...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <td>ID</td>
+                <td>Nome</td>
+                <td>Imagem</td>
+                <td>Descrição</td>
+                <td>Tamanho</td>
+                <td>Tema</td>
+                <td>Alterar</td>
+                <td>Deletar</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var bomb in bombObj)
+            {
+               <tr>
+                   <td><span class="me-3">@bomb.BombId</span></td>
+                   <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><span class="me-3">TESTE</span></td>
+                    <td><button class="btn btn-warning" @onclick="() => Funcao(bomb.BombId)">Click</button></td>
+                    <td><button class="btn btn-danger" @onclick="() => Funcao(bomb.BombId)">Click</button></td>
+               </tr>
+            }
+
+        </tbody>
+    </table>    
+}
+
+@code {
+
+    private BombModel[]? bombObj;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1000);
+
+        bombObj = Enumerable.Range(1, 20).Select(index => new BombModel
+            {
+               BombId = Random.Shared.Next(0,20)
+            }).ToArray();
+    }
+
+    String teste = "";
+
+    public void Funcao(int pid)
+    {
+        Console.WriteLine("teste");
+    }
+
+}
