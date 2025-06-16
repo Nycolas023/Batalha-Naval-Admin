@@ -1,5 +1,6 @@
 ﻿@page "/tema"
 @using Batalha_Naval_Admin.Models
+@inject HttpClient Http
 @rendermode InteractiveServer
 
 <PageTitle>Temas</PageTitle>
@@ -12,15 +13,17 @@
 }
 else
 {
+    <div style="padding-left: 20%">
+        <button class="btn btn-primary" style="width: 50%;" @onclick="CriarNovoTema">Criar Tema</button>
+    </div>
     <table class="table">
         <thead>
             <tr>
                 <td>ID</td>
                 <td>Nome</td>
                 <td>Imagem</td>
-                <td>Descrição</td>
-                <td>Tamanho</td>
-                <td>Tema</td>
+                <td>Preview</td>
+                <td>Preço</td>
                 <td>Alterar</td>
                 <td>Deletar</td>
             </tr>
@@ -28,41 +31,168 @@ else
         <tbody>
             @foreach (var tema in themeObj)
             {
-               <tr>
-                   <td><span class="me-3">@tema.ThemeId</span></td>
-                   <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><button class="btn btn-warning" @onclick="() => Funcao(tema.ThemeId)">Click</button></td>
-                    <td><button class="btn btn-danger" @onclick="() => Funcao(tema.ThemeId)">Click</button></td>
-               </tr>
+                <tr>
+                    <td>@tema.ThemeId</td>
+                    <td>@tema.ThemeName</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(tema.ThemeImage))
+                        {
+                            <img src="@tema.ThemeImage" width="40" />
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(tema.ThemePreview))
+                        {
+                            <img src="@tema.ThemePreview" width="40" />
+                        }
+                    </td>
+                    <td>@tema.ThemePrice</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => Funcao(tema.ThemeId)">Alterar</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeletarTema(tema.ThemeId)">Deletar</button>
+                    </td>
+                </tr>
             }
-
         </tbody>
-    </table>    
+    </table>
+
+    @if (mostrarPopup && temaSelecionado != null)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Tema</h5>
+                        <button type="button" class="btn-close" @onclick="FecharPopup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input class="form-control" @bind="temaSelecionado.ThemeName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Imagem</label>
+                            <input class="form-control" @bind="temaSelecionado.ThemeImage" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preview</label>
+                            <input class="form-control" @bind="temaSelecionado.ThemePreview" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preço</label>
+                            <input class="form-control" type="number" @bind="temaSelecionado.ThemePrice" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="FecharPopup">Fechar</button>
+                        <button class="btn btn-primary" @onclick="SalvarAlteracao">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    
 }
 
 @code {
-
     private ThemeModel[]? themeObj;
+    private ThemeModel? temaSelecionado;
+    private bool mostrarPopup = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(1000);
-
-        themeObj = Enumerable.Range(1, 20).Select(index => new ThemeModel
-            {
-               ThemeId = Random.Shared.Next(0,20)
-            }).ToArray();
+        try
+        {
+            themeObj = await Http.GetFromJsonAsync<ThemeModel[]>("api/Consulta/todosTemas");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar temas: {ex.Message}");
+        }
     }
 
-    String teste = "";
-
-    public void Funcao(int pid)
+    private async Task DeletarTema(int id)
     {
-        Console.WriteLine("teste");
+        try
+        {
+            var payload = new { p_Theme_Id = id };
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-tema")
+            {
+                Content = JsonContent.Create(payload)
+            };
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                themeObj = themeObj?.Where(t => t.ThemeId != id).ToArray();
+            }
+            else
+            {
+                Console.WriteLine($"Erro ao deletar tema: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao deletar tema: {ex.Message}");
+        }
     }
+
+    private void CriarNovoTema()
+    {
+        temaSelecionado = new ThemeModel(); // inicia campos vazios
+        mostrarPopup = true;
+    }
+
+    public void Funcao(int id)
+    {
+        temaSelecionado = themeObj?.FirstOrDefault(t => t.ThemeId == id);
+        mostrarPopup = true;
+    }
+
+    private void FecharPopup()
+    {
+        mostrarPopup = false;
+        temaSelecionado = null;
+    }
+
+    private async Task SalvarAlteracao()
+    {
+        if (temaSelecionado == null)
+            return;
+
+        HttpResponseMessage response;
+
+        if (temaSelecionado.ThemeId == 0)
+        {
+            var body = new
+            {
+                name = temaSelecionado.ThemeName,
+                image = temaSelecionado.ThemeImage,
+                preview = temaSelecionado.ThemePreview,
+                price = temaSelecionado.ThemePrice
+            };
+
+            response = await Http.PostAsJsonAsync("api/Cadastro/tema", body);
+        }
+        else
+        {
+            response = await Http.PostAsJsonAsync("api/Alteracao/AtualizarTema", temaSelecionado);
+        }
+
+        if (response.IsSuccessStatusCode)
+        {
+            themeObj = await Http.GetFromJsonAsync<ThemeModel[]>("api/Consulta/todosTemas");
+            mostrarPopup = false;
+        }
+        else
+        {
+            Console.WriteLine("Erro ao salvar tema.");
+        }
+    }
+
 
 }

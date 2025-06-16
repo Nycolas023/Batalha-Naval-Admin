@@ -1,5 +1,6 @@
 ﻿@page "/barco"
 @using Batalha_Naval_Admin.Models
+@inject HttpClient Http
 @rendermode InteractiveServer
 
 <PageTitle>Barcos</PageTitle>
@@ -12,6 +13,10 @@
 }
 else
 {
+    <div style="padding-left: 20%">
+        <button class="btn btn-primary" style="width: 50%;" @onclick="CriarNovoBarco">Criar Barco</button>
+    </div>
+
     <table class="table">
         <thead>
             <tr>
@@ -20,7 +25,7 @@ else
                 <td>Imagem</td>
                 <td>Descrição</td>
                 <td>Tamanho</td>
-                <td>Tema</td>
+                <td>ID Tema</td>
                 <td>Alterar</td>
                 <td>Deletar</td>
             </tr>
@@ -28,41 +33,169 @@ else
         <tbody>
             @foreach (var barco in shipObj)
             {
-               <tr>
-                   <td><span class="me-3">@barco.ShipId</span></td>
-                   <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                   <td><button class="btn btn-warning" @onclick="() => Funcao(barco.ShipId)">Click</button></td>
-                   <td><button class="btn btn-danger" @onclick="() => Funcao(barco.ShipId)">Click</button></td>
-               </tr>
+                <tr>
+                    <td>@barco.ShipId</td>
+                    <td>@barco.ShipName</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(barco.ShipImage))
+                        {
+                            <img src="@barco.ShipImage" width="40" />
+                        }
+                    </td>
+                    <td>@barco.ShipDesc</td>
+                    <td>@barco.ShipSize</td>
+                    <td>@barco.ThemeId</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => Funcao(barco.ShipId)">Alterar</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeletarBarco(barco.ShipId)">Deletar</button>
+                    </td>
+                </tr>
             }
-
         </tbody>
-    </table>    
+    </table>
+
+    @if (mostrarPopup && barcoSelecionado != null)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Barco</h5>
+                        <button type="button" class="btn-close" @onclick="FecharPopup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input class="form-control" @bind="barcoSelecionado.ShipName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Imagem</label>
+                            <input class="form-control" @bind="barcoSelecionado.ShipImage" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input class="form-control" @bind="barcoSelecionado.ShipDesc" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tamanho</label>
+                            <input class="form-control" type="number" @bind="barcoSelecionado.ShipSize" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ID Tema</label>
+                            <input class="form-control" type="number" @bind="barcoSelecionado.ThemeId" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="FecharPopup">Fechar</button>
+                        <button class="btn btn-primary" @onclick="SalvarAlteracao">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
-
     private ShipModel[]? shipObj;
+    private ShipModel? barcoSelecionado;
+    private bool mostrarPopup = false;
+
+    public void Funcao(int id)
+    {
+        barcoSelecionado = shipObj?.FirstOrDefault(b => b.ShipId == id);
+        mostrarPopup = true;
+    }
+
+    private void FecharPopup()
+    {
+        mostrarPopup = false;
+        barcoSelecionado = null;
+    }
+
+    private void CriarNovoBarco()
+    {
+        barcoSelecionado = new ShipModel();
+        mostrarPopup = true;
+    }
+
+
+    private async Task SalvarAlteracao()
+    {
+        if (barcoSelecionado == null)
+            return;
+
+        HttpResponseMessage response;
+
+        if (barcoSelecionado.ShipId == 0)
+        {
+            var body = new
+            {
+                image = barcoSelecionado.ShipImage,
+                name = barcoSelecionado.ShipName,
+                desc= barcoSelecionado.ShipDesc,
+                size = barcoSelecionado.ShipSize,
+                theme_id = barcoSelecionado.ThemeId
+            };
+
+            response = await Http.PostAsJsonAsync("api/Cadastro/barco", body);
+        }
+        else
+        {
+            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBarco", barcoSelecionado);
+        }
+
+        if (response.IsSuccessStatusCode)
+        {
+            shipObj = await Http.GetFromJsonAsync<ShipModel[]>("api/Consulta/todosBarcos");
+            mostrarPopup = false;
+        }
+        else
+        {
+            Console.WriteLine("Erro ao salvar barco.");
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(1000);
-
-        shipObj = Enumerable.Range(1, 20).Select(index => new ShipModel
-            {
-               ShipId = Random.Shared.Next(0,20)
-            }).ToArray();
+        try
+        {
+            shipObj = await Http.GetFromJsonAsync<ShipModel[]>("api/Consulta/todosBarcos");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar barcos: {ex.Message}");
+        }
     }
 
-    String teste = "";
-
-    public void Funcao(int pid)
+    private async Task DeletarBarco(int id)
     {
-        Console.WriteLine("teste");
+        try
+        {
+            var payload = new { p_Ship_Id = id };
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-tema")
+            {
+                Content = JsonContent.Create(payload)
+            };
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                shipObj = shipObj?.Where(t => t.ShipId != id).ToArray();
+            }
+            else
+            {
+                Console.WriteLine($"Erro ao deletar tema: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao deletar tema: {ex.Message}");
+        }
     }
 
 }
