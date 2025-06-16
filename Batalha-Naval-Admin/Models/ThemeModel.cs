@@ -1,11 +1,19 @@
-﻿namespace Batalha_Naval_Admin.Models
+﻿using System.Text.Json.Serialization;
+
+public class ThemeModel
 {
-    public class ThemeModel
-    {
-        public int ThemeId { get; set; }
-        public string ThemeName { get; set; } = string.Empty;
-        public string ThemePrice { get; set; } = string.Empty;
-        public string ThemeImage { get; set; } = string.Empty;
-        
-    }
+    [JsonPropertyName("theme_id")]
+    public int ThemeId { get; set; }
+
+    [JsonPropertyName("theme_name")]
+    public string? ThemeName { get; set; }
+
+    [JsonPropertyName("theme_image")]
+    public string? ThemeImage { get; set; }
+
+    [JsonPropertyName("theme_preview")]
+    public string? ThemePreview { get; set; }
+
+    [JsonPropertyName("theme_price")]
+    public int ThemePrice { get; set; }
 }

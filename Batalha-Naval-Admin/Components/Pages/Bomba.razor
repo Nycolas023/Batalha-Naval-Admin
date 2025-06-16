@@ -1,5 +1,6 @@
 ﻿@page "/bomba"
 @using Batalha_Naval_Admin.Models
+@inject HttpClient Http
 @rendermode InteractiveServer
 
 <PageTitle>Bombas</PageTitle>
@@ -12,6 +13,9 @@
 }
 else
 {
+    <div style="padding-left: 20%">
+        <button class="btn btn-primary" style="width: 50%;" @onclick="CriarNovaBomba">Criar Bomba</button>
+    </div>
     <table class="table">
         <thead>
             <tr>
@@ -28,41 +32,162 @@ else
         <tbody>
             @foreach (var bomb in bombObj)
             {
-               <tr>
-                   <td><span class="me-3">@bomb.BombId</span></td>
-                   <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><span class="me-3">TESTE</span></td>
-                    <td><button class="btn btn-warning" @onclick="() => Funcao(bomb.BombId)">Click</button></td>
-                    <td><button class="btn btn-danger" @onclick="() => Funcao(bomb.BombId)">Click</button></td>
-               </tr>
+                <tr>
+                    <td>@bomb.BombId</td>
+                    <td>@bomb.BombName</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(bomb.BombImage))
+                        {
+                            <img src="@bomb.BombImage" width="40" />
+                        }
+                    </td>
+                    <td>@bomb.BombDesc</td>
+                    <td>@bomb.BombPrice</td>
+                    <td>@bomb.BombType</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => Funcao(bomb.BombId)">Alterar</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeletarBomba(bomb.BombId)">Deletar</button>
+                    </td>
+                </tr>
             }
-
         </tbody>
-    </table>    
+    </table>
+
+    @if (mostrarPopup && bombaSelecionada != null)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Bomba</h5>
+                        <button type="button" class="btn-close" @onclick="FecharPopup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input class="form-control" @bind="bombaSelecionada.BombName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Imagem</label>
+                            <input class="form-control" @bind="bombaSelecionada.BombImage" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input class="form-control" @bind="bombaSelecionada.BombDesc" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preço</label>
+                            <input class="form-control" type="number" @bind="bombaSelecionada.BombPrice" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo</label>
+                            <input class="form-control" @bind="bombaSelecionada.BombType" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="FecharPopup">Fechar</button>
+                        <button class="btn btn-primary" @onclick="SalvarAlteracao">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
 }
 
 @code {
-
     private BombModel[]? bombObj;
+    private BombModel? bombaSelecionada;
+    private bool mostrarPopup = false;
+
+    public void Funcao(int id)
+    {
+        bombaSelecionada = bombObj?.FirstOrDefault(b => b.BombId == id);
+        mostrarPopup = true;
+    }
+
+    private void CriarNovaBomba()
+    {
+        bombaSelecionada = new BombModel(); 
+        mostrarPopup = true;
+    }
+
+
+
+    private void FecharPopup()
+    {
+        mostrarPopup = false;
+        bombaSelecionada = null;
+    }
+
+    private async Task SalvarAlteracao()
+    {
+        if (bombaSelecionada == null)
+            return;
+
+        HttpResponseMessage response;
+
+        if (bombaSelecionada.BombId == 0)
+        {
+            response = await Http.PostAsJsonAsync("api/Cadastro/bomba", bombaSelecionada);
+        }
+        else
+        {
+            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBomba", bombaSelecionada);
+        }
+
+        if (response.IsSuccessStatusCode)
+        {
+            bombObj = await Http.GetFromJsonAsync<BombModel[]>("api/Consulta/todasBombas");
+            mostrarPopup = false;
+        }
+        else
+        {
+            Console.WriteLine("Erro ao salvar bomba.");
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(1000);
-
-        bombObj = Enumerable.Range(1, 20).Select(index => new BombModel
-            {
-               BombId = Random.Shared.Next(0,20)
-            }).ToArray();
+        try
+        {
+            bombObj = await Http.GetFromJsonAsync<BombModel[]>("api/Consulta/todasBombas");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar bombas: {ex.Message}");
+        }
     }
 
-    String teste = "";
-
-    public void Funcao(int pid)
+    private async Task DeletarBomba(int id)
     {
-        Console.WriteLine("teste");
+        try
+        {
+            var payload = new { p_Bomb_Id = id };
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-tema")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                bombObj = bombObj?.Where(t => t.BombId != id).ToArray();
+            }
+            else
+            {
+                Console.WriteLine($"Erro ao deletar tema: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao deletar tema: {ex.Message}");
+        }
     }
 
 }

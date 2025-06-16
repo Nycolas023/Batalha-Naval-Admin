@@ -1,12 +1,22 @@
-﻿namespace Batalha_Naval_Admin.Models
+﻿using System.Text.Json.Serialization;
+
+public class ShipModel
 {
-    public class ShipModel
-    {
-        public int ShipId { get; set; }
-        public string ShipImage { get; set; } = string.Empty;
-        public string ShipName { get; set; } = string.Empty;
-        public string ShipDesc { get; set; } = string.Empty;
-        public string ShipSize { get; set; } = string.Empty;
-        public int ThemeId { get; set; }
-    }
+    [JsonPropertyName("ship_id")]
+    public int ShipId { get; set; }
+
+    [JsonPropertyName("ship_name")]
+    public string? ShipName { get; set; }
+
+    [JsonPropertyName("ship_image")]
+    public string? ShipImage { get; set; }
+
+    [JsonPropertyName("ship_desc")]
+    public string? ShipDesc { get; set; }
+
+    [JsonPropertyName("ship_size")]
+    public int ShipSize { get; set; }
+
+    [JsonPropertyName("theme_id")]
+    public int ThemeId { get; set; }
 }
