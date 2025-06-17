@@ -1,4 +1,5 @@
 ﻿@page "/tema"
+@using Batalha_Naval_Admin.DTOs
 @using Batalha_Naval_Admin.Models
 @inject HttpClient Http
 @rendermode InteractiveServer
@@ -93,7 +94,7 @@ else
             </div>
         </div>
     }
-    
+
 }
 
 @code {
@@ -180,7 +181,16 @@ else
         }
         else
         {
-            response = await Http.PostAsJsonAsync("api/Alteracao/AtualizarTema", temaSelecionado);
+            var dto = new UpdateThemeDTO
+            {
+                ThemeId = temaSelecionado.ThemeId,
+                ThemeName = temaSelecionado.ThemeName,
+                ThemeImage = temaSelecionado.ThemeImage,
+                ThemePreview = temaSelecionado.ThemePreview,
+                ThemePrice = temaSelecionado.ThemePrice
+            };
+
+            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarTema", dto);
         }
 
         if (response.IsSuccessStatusCode)
