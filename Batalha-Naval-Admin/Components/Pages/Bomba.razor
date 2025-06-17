@@ -1,4 +1,5 @@
 ﻿@page "/bomba"
+@using Batalha_Naval_Admin.DTOs
 @using Batalha_Naval_Admin.Models
 @inject HttpClient Http
 @rendermode InteractiveServer
@@ -110,11 +111,9 @@ else
 
     private void CriarNovaBomba()
     {
-        bombaSelecionada = new BombModel(); 
+        bombaSelecionada = new BombModel();
         mostrarPopup = true;
     }
-
-
 
     private void FecharPopup()
     {
@@ -131,11 +130,31 @@ else
 
         if (bombaSelecionada.BombId == 0)
         {
+            var body = new
+            {
+             BombDesc   =  bombaSelecionada.BombDesc,
+             BombImage =  bombaSelecionada.BombImage,
+             BombId =    bombaSelecionada.BombId,
+             BombName =  bombaSelecionada.BombName,
+             BombPrice = bombaSelecionada.BombPrice,
+             BombType = bombaSelecionada.BombType
+        };
+
             response = await Http.PostAsJsonAsync("api/Cadastro/bomba", bombaSelecionada);
         }
         else
         {
-            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBomba", bombaSelecionada);
+            var dto = new UpdateBombDTO
+            {
+                BombDesc = bombaSelecionada.BombDesc,
+                BombImage = bombaSelecionada.BombImage,
+                BombId = bombaSelecionada.BombId,
+                BombName = bombaSelecionada.BombName,
+                BombPrice = bombaSelecionada.BombPrice,
+                BombType = bombaSelecionada.BombType
+            };
+
+            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBomba", dto);
         }
 
         if (response.IsSuccessStatusCode)
@@ -148,7 +167,6 @@ else
             Console.WriteLine("Erro ao salvar bomba.");
         }
     }
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,9 +187,9 @@ else
             var payload = new { p_Bomb_Id = id };
 
             var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-tema")
-                {
-                    Content = JsonContent.Create(payload)
-                };
+            {
+                Content = JsonContent.Create(payload)
+            };
 
             var response = await Http.SendAsync(request);
 

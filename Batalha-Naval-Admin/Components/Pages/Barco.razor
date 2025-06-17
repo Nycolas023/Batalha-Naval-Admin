@@ -1,4 +1,5 @@
 ﻿@page "/barco"
+@using Batalha_Naval_Admin.DTOs
 @using Batalha_Naval_Admin.Models
 @inject HttpClient Http
 @rendermode InteractiveServer
@@ -143,8 +144,19 @@ else
         }
         else
         {
-            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBarco", barcoSelecionado);
+            var dto = new UpdateShipDTO
+            {
+                ThemeId = barcoSelecionado.ThemeId,
+                ShipId = barcoSelecionado.ShipId,
+                ShipImage = barcoSelecionado.ShipImage,
+                ShipDesc = barcoSelecionado.ShipDesc,
+                ShipSize = barcoSelecionado.ShipSize,
+                ShipName = barcoSelecionado.ShipName
+            };
+
+            response = await Http.PutAsJsonAsync("api/Alteracao/AtualizarBarco", dto);
         }
+
 
         if (response.IsSuccessStatusCode)
         {
@@ -176,7 +188,7 @@ else
         {
             var payload = new { p_Ship_Id = id };
 
-            var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-tema")
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/Deletes/deletar-barco")
             {
                 Content = JsonContent.Create(payload)
             };
